@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Liste d'objets Minecraft</title>
+</head>
+<body>
+    <h1>Liste d'objets Minecraft</h1>
+    <ul id="minecraft-list">
+        <!-- Les éléments seront remplis dynamiquement depuis le JSON -->
+    </ul>
+    <button onclick="saveData()">Sauvegarder</button>
+
+    <script>
+        // Variable pour stocker les données initiales
+        let initialData = {};
+
+        // Fonction pour charger les données depuis le fichier JSON
+        function loadJSON() {
+            fetch('/getMinecraftData')
+                .then(response => response.json())
+                .then(data => {
+                    const minecraftList = document.getElementById('minecraft-list');
+                    initialData = data; // Sauvegarder les données initiales
+
+                    // Parcourir les données JSON et créer les éléments HTML
+                    Object.keys(data).forEach(itemName => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <span>Nom de l'objet : ${itemName}</span>
+                            <span>Valeur : <input type="number" class="object-value" data-itemname="${itemName}" value="${data[itemName]}"></span>
+                        `;
+                        minecraftList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Erreur lors du chargement des données JSON :', error));
+        }
+
+        // Appeler la fonction de chargement au chargement de la page
+        window.onload = loadJSON;
+
+        // Fonction pour sauvegarder les données modifiées sur le serveur
+        function saveData() {
+            const objects = document.querySelectorAll(".object-value");
+            const minecraftData = {};
+
+            objects.forEach(obj => {
+                const itemName = obj.getAttribute('data-itemname');
+                const itemValue = parseInt(obj.value);
+                minecraftData[itemName] = itemValue;
+            });
+
+            // Envoyer les données au serveur pour mise à jour
+            fetch('/updateMinecraftData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(minecraftData),
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Données Minecraft mises à jour avec succès.');
+                } else {
+                    console.error('Erreur lors de la mise à jour des données Minecraft.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
